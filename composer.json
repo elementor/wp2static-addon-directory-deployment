@@ -1,27 +1,23 @@
 {
-    "name": "leonstafford/wp2static-addon-s3",
-    "description": "S3 deployment Add-on for WP2Static.",
-    "homepage": "https://wp2static.com",
-      "license": "UNLICENSE",
-      "authors": [
-        {
-          "name": "Leon Stafford",
-          "email": "me@ljs.dev",
-          "homepage": "https://ljs.dev"
-        }
-      ],
+    "name": "twardoch/wp2static-addon-copy",
+    "description": "Copy to Folder Add-on for WP2Static.",
+    "homepage": "https://github.com/twardoch/wp2static-addon-copy",
+    "license": "UNLICENSE",
+    "authors": [{
+        "name": "Adam Twardoch",
+        "email": "adam+github@twardoch.com",
+        "homepage": "https://twardoch.github.io"
+    }],
     "type": "wordpress-plugin",
     "support": {
-        "issues": "https://github.com/leonstafford/wp2static-addon-s3/issues",
+        "issues": "https://github.com/twardoch/wp2static-addon-copy/issues",
         "forum": "https://wp2static.com/community",
         "docs": "https://wp2static.com/documentation",
-        "source": "https://github.com/leonstafford/wp2static-addon-s3"
+        "source": "https://github.com/twardoch/wp2static-addon-copy"
     },
-    "repositories": [
-    ],
+    "repositories": [],
     "require": {
-        "php": ">=7.3",
-        "aws/aws-sdk-php": "^3.166.1"
+        "php": ">=7.3"
     },
     "require-dev": {
         "phpstan/phpstan": "*",
@@ -37,13 +33,13 @@
     },
     "autoload": {
         "psr-4": {
-            "WP2StaticS3\\": "src/"
+            "WP2StaticCopy\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "PHPStan\\WordPress\\": "tests/phpstan/",
-            "WP2StaticS3\\": "src/"
+            "WP2StaticCopy\\": "src/"
         }
     },
     "config": {

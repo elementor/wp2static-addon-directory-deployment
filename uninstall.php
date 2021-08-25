@@ -7,6 +7,6 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 global $wpdb;
 
-$table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+$table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
 $wpdb->query( "DROP TABLE IF EXISTS $table_name" );

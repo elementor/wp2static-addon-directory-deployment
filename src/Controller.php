@@ -1,16 +1,16 @@
 <?php
 
-namespace WP2StaticS3;
+namespace WP2StaticCopy;
 
 class Controller {
     public function run() : void {
         add_filter(
             'wp2static_add_menu_items',
-            [ 'WP2StaticS3\Controller', 'addSubmenuPage' ]
+            [ 'WP2StaticCopy\Controller', 'addSubmenuPage' ]
         );
 
         add_action(
-            'admin_post_wp2static_s3_save_options',
+            'admin_post_wp2static_copy_save_options',
             [ $this, 'saveOptionsFromUI' ],
             15,
             1
@@ -32,17 +32,17 @@ class Controller {
 
         do_action(
             'wp2static_register_addon',
-            'wp2static-addon-s3',
+            'wp2static-addon-copy',
             'deploy',
-            'S3 Deployment',
-            'https://wp2static.com/addons/s3/',
-            'Deploys to S3 with optional CloudFront cache invalidation'
+            'Copy Deployment',
+            'https://github.com/twardoch/wp2static-addon-copy',
+            'Copies to folder with optional removal of previous content'
         );
 
         if ( defined( 'WP_CLI' ) ) {
             \WP_CLI::add_command(
-                'wp2static s3',
-                [ CLI::class, 's3' ]
+                'wp2static copy',
+                [ CLI::class, 'copy' ]
             );
         }
     }
@@ -56,7 +56,7 @@ class Controller {
         global $wpdb;
         $options = [];
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
         $rows = $wpdb->get_results( "SELECT * FROM $table_name" );
 
@@ -73,7 +73,7 @@ class Controller {
     public static function seedOptions() : void {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
         $query_string =
             "INSERT IGNORE INTO $table_name (name, value, label, description) " .
@@ -81,19 +81,9 @@ class Controller {
 
         $query = $wpdb->prepare(
             $query_string,
-            'cfDistributionID',
-            '',
-            'CloudFront Distribution ID',
-            'If using CloudFront, set this to auto-invalidate cache'
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            's3Bucket',
-            '',
-            'Bucket name',
+            'copyRemoveTarget',
+            '1',
+            'Clean target folder before deployment',
             ''
         );
 
@@ -101,9 +91,9 @@ class Controller {
 
         $query = $wpdb->prepare(
             $query_string,
-            's3AccessKeyID',
+            'copyTargetFolder',
             '',
-            'Access Key ID',
+            'Target folder (absolute)',
             ''
         );
 
@@ -111,109 +101,9 @@ class Controller {
 
         $query = $wpdb->prepare(
             $query_string,
-            's3SecretAccessKey',
+            'copyExtraFolder',
             '',
-            'Secret Access Key',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'cfAccessKeyID',
-            '',
-            'Access Key ID',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'cfSecretAccessKey',
-            '',
-            'Secret Access Key',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            's3Region',
-            '',
-            'Region',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            's3Profile',
-            '',
-            'Profile',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'cfRegion',
-            '',
-            'Region',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'cfProfile',
-            '',
-            'Profile',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            's3RemotePath',
-            '',
-            'Path prefix in bucket',
-            'Optionally, deploy to a subdirectory within bucket'
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            's3CacheControl',
-            'public, max-age=900',
-            'Cache-Control header value',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            's3ObjectACL',
-            'public-read',
-            'Object ACL',
-            ''
-        );
-
-        $wpdb->query( $query );
-
-        $query = $wpdb->prepare(
-            $query_string,
-            'cfMaxPathsToInvalidate',
-            '',
-            'Maximum number of paths to invalidate before triggering a full invalidation',
+            'Extra source folder (absolute)',
             ''
         );
 
@@ -228,7 +118,7 @@ class Controller {
     public static function saveOption( string $name, $value ) : void {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
         $wpdb->update(
             $table_name,
@@ -237,40 +127,40 @@ class Controller {
         );
     }
 
-    public static function renderS3Page() : void {
+    public static function renderCopyPage() : void {
         self::createOptionsTable();
         self::seedOptions();
 
         $view = [];
-        $view['nonce_action'] = 'wp2static-s3-options';
+        $view['nonce_action'] = 'wp2static-copy-options';
         $view['uploads_path'] = \WP2Static\SiteInfo::getPath( 'uploads' );
-        $s3_path = \WP2Static\SiteInfo::getPath( 'uploads' ) . 'wp2static-processed-site.s3';
+        $copy_path = \WP2Static\SiteInfo::getPath( 'uploads' ) . 'wp2static-processed-site.copy';
 
         $view['options'] = self::getOptions();
 
-        $view['s3_url'] =
-            is_file( $s3_path ) ?
-                \WP2Static\SiteInfo::getUrl( 'uploads' ) . 'wp2static-processed-site.s3' : '#';
+        $view['copy_url'] =
+            is_file( $copy_path ) ?
+                \WP2Static\SiteInfo::getUrl( 'uploads' ) . 'wp2static-processed-site.copy' : '#';
 
-        require_once __DIR__ . '/../views/s3-page.php';
+        require_once __DIR__ . '/../views/copy-page.php';
     }
 
 
     public function deploy( string $processed_site_path, string $enabled_deployer ) : void {
-        if ( $enabled_deployer !== 'wp2static-addon-s3' ) {
+        if ( $enabled_deployer !== 'wp2static-addon-copy' ) {
             return;
         }
 
-        \WP2Static\WsLog::l( 'S3 Addon deploying' );
+        \WP2Static\WsLog::l( 'Copy Addon deploying' );
 
-        $s3_deployer = new Deployer();
-        $s3_deployer->uploadFiles( $processed_site_path );
+        $copy_deployer = new Deployer();
+        $copy_deployer->uploadFiles( $processed_site_path );
     }
 
     public static function createOptionsTable() : void {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -361,117 +251,37 @@ class Controller {
      * @return mixed[] array of submenu pages
      */
     public static function addSubmenuPage( array $submenu_pages ) : array {
-        $submenu_pages['s3'] = [ 'WP2StaticS3\Controller', 'renderS3Page' ];
+        $submenu_pages['copy'] = [ 'WP2StaticCopy\Controller', 'renderCopyPage' ];
 
         return $submenu_pages;
     }
 
     public static function saveOptionsFromUI() : void {
-        check_admin_referer( 'wp2static-s3-options' );
+        check_admin_referer( 'wp2static-copy-options' );
 
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
         $wpdb->update(
             $table_name,
-            [ 'value' => sanitize_text_field( $_POST['cfDistributionID'] ) ],
-            [ 'name' => 'cfDistributionID' ]
+            [ 'value' => sanitize_text_field( $_POST['copyRemoveTarget'] ) ],
+            [ 'name' => 'copyRemoveTarget' ]
         );
 
         $wpdb->update(
             $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3Bucket'] ) ],
-            [ 'name' => 's3Bucket' ]
+            [ 'value' => sanitize_text_field( $_POST['copyTargetFolder'] ) ],
+            [ 'name' => 'copyTargetFolder' ]
         );
 
         $wpdb->update(
             $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3AccessKeyID'] ) ],
-            [ 'name' => 's3AccessKeyID' ]
+            [ 'value' => sanitize_text_field( $_POST['copyExtraFolder'] ) ],
+            [ 'name' => 'copyExtraFolder' ]
         );
 
-        $secret_access_key =
-            $_POST['s3SecretAccessKey'] ?
-            \WP2Static\CoreOptions::encrypt_decrypt(
-                'encrypt',
-                sanitize_text_field( $_POST['s3SecretAccessKey'] )
-            ) : '';
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => $secret_access_key ],
-            [ 'name' => 's3SecretAccessKey' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['cfAccessKeyID'] ) ],
-            [ 'name' => 'cfAccessKeyID' ]
-        );
-
-        $secret_access_key =
-            $_POST['cfSecretAccessKey'] ?
-            \WP2Static\CoreOptions::encrypt_decrypt(
-                'encrypt',
-                sanitize_text_field( $_POST['cfSecretAccessKey'] )
-            ) : '';
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => $secret_access_key ],
-            [ 'name' => 'cfSecretAccessKey' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3Region'] ) ],
-            [ 'name' => 's3Region' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['cfRegion'] ) ],
-            [ 'name' => 'cfRegion' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3Profile'] ) ],
-            [ 'name' => 's3Profile' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['cfProfile'] ) ],
-            [ 'name' => 'cfProfile' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3RemotePath'] ) ],
-            [ 'name' => 's3RemotePath' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3CacheControl'] ) ],
-            [ 'name' => 's3CacheControl' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['s3ObjectACL'] ) ],
-            [ 'name' => 's3ObjectACL' ]
-        );
-
-        $wpdb->update(
-            $table_name,
-            [ 'value' => sanitize_text_field( $_POST['cfMaxPathsToInvalidate'] ) ],
-            [ 'name' => 'cfMaxPathsToInvalidate' ]
-        );
-
-        wp_safe_redirect( admin_url( 'admin.php?page=wp2static-addon-s3' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=wp2static-addon-copy' ) );
         exit;
     }
 
@@ -483,7 +293,7 @@ class Controller {
     public static function getValue( string $name ) : string {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_s3_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
 
         $sql = $wpdb->prepare(
             "SELECT value FROM $table_name WHERE" . ' name = %s LIMIT 1',
@@ -502,11 +312,11 @@ class Controller {
     public function addOptionsPage() : void {
         add_submenu_page(
             '',
-            'S3 Deployment Options',
-            'S3 Deployment Options',
+            'Copy Deployment Options',
+            'Copy Deployment Options',
             'manage_options',
-            'wp2static-addon-s3',
-            [ $this, 'renderS3Page' ]
+            'wp2static-addon-copy',
+            [ $this, 'renderCopyPage' ]
         );
     }
 }

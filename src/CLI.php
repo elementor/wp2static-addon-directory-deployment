@@ -1,6 +1,6 @@
 <?php
 
-namespace WP2StaticS3;
+namespace WP2StaticCopy;
 
 use WP_CLI;
 
@@ -8,9 +8,9 @@ use WP_CLI;
 /**
  * WP2StaticS3 WP-CLI commands
  *
- * Registers WP-CLI commands for WP2StaticS3 under main wp2static cmd
+ * Registers WP-CLI commands for WP2StaticCopy under main wp2static cmd
  *
- * Usage: wp wp2static options set s3Bucket mybucketname
+ * Usage: wp wp2static options set copy folder
  */
 class CLI {
 
@@ -20,7 +20,7 @@ class CLI {
      * @param string[] $args CLI args
      * @param string[] $assoc_args CLI args
      */
-    public static function s3(
+    public static function copy(
         array $args,
         array $assoc_args
     ) : void {
@@ -31,7 +31,7 @@ class CLI {
         }
 
         if ( $action === 'options' ) {
-            WP_CLI::line( 'TBC setting options for S3 addon' );
+            WP_CLI::line( 'TBC setting options for Copy addon' );
         }
     }
 }

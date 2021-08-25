@@ -2,7 +2,7 @@
 
 ######################################
 ##
-## Build WP2Static S3 Deployment Addon
+## Build WP2Static Copy to Folder Addon
 ##
 ## script archive_name dont_minify
 ##
@@ -11,43 +11,45 @@
 ######################################
 
 # run script from project root
-EXEC_DIR=$(pwd)
+EXEC_DIR="$(pwd)"
+PKG_NAME="wp2static-addon-copy"
 
-TMP_DIR=$HOME/plugintmp
-rm -Rf $TMP_DIR
-mkdir -p $TMP_DIR
+TMP_DIR="$HOME/plugintmp"
+rm -Rf "$TMP_DIR"
+mkdir -p "$TMP_DIR"
 
-rm -Rf $TMP_DIR/wp2static-addon-s3
-mkdir $TMP_DIR/wp2static-addon-s3
+rm -Rf "$TMP_DIR/$PKG_NAME"
+mkdir "$TMP_DIR/$PKG_NAME"
 
 # clear dev dependencies
-rm -Rf $EXEC_DIR/vendor/*
+rm -Rf "$EXEC_DIR/vendor/*"
 # load prod deps and optimize loader
+composer update
 composer install --quiet --no-dev --optimize-autoloader
 
 # cp all required sources to build dir
-cp -r $EXEC_DIR/*.php $TMP_DIR/wp2static-addon-s3/
-cp -r $EXEC_DIR/src $TMP_DIR/wp2static-addon-s3/
-cp -r $EXEC_DIR/vendor $TMP_DIR/wp2static-addon-s3/
-cp -r $EXEC_DIR/views $TMP_DIR/wp2static-addon-s3/
+cp -r "$EXEC_DIR"/*.php "$TMP_DIR/$PKG_NAME/"
+cp -r "$EXEC_DIR/src" "$TMP_DIR/$PKG_NAME/"
+cp -r "$EXEC_DIR/vendor" $TMP_DIR/$PKG_NAME/
+cp -r "$EXEC_DIR/views" "$TMP_DIR/$PKG_NAME/"
 
-cd $TMP_DIR
+cd "$TMP_DIR"
 
 # tidy permissions
 find . -type d -exec chmod 755 {} \;
 find . -type f -exec chmod 644 {} \;
 
-zip --quiet -r -9 ./$1.zip ./wp2static-addon-s3
+zip --quiet -r -9 "./$PKG_NAME.zip" "./$PKG_NAME"
 
 cd -
 
-mkdir -p $HOME/Downloads/
+mkdir -p "$EXEC_DIR/release/"
 
-cp $TMP_DIR/$1.zip $HOME/Downloads/
+cp "$TMP_DIR/$PKG_NAME.zip" "$EXEC_DIR/release/"
 
 # reset dev dependencies
-cd $EXEC_DIR
+cd "$EXEC_DIR"
 # clear dev dependencies
-rm -Rf $EXEC_DIR/vendor/*
+rm -Rf "$EXEC_DIR/vendor/*"
 # load prod deps
 composer install --quiet
