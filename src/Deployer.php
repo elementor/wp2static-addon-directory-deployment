@@ -101,7 +101,7 @@ class Deployer {
 
         $targetFolder = Controller::getValue( 'copyTargetFolder' );
         if (empty($targetFolder)) {
-            $err = 'You must specify the target folder in WP2Static > Addons > Copy Deployment > Configure';
+            $err = 'You must specify the target folder in WP2Static > Addons > Directory Deployment > Configure';
             \WP2Static\WsLog::l( $err );
             return;
         }

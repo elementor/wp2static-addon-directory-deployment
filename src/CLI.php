@@ -31,7 +31,7 @@ class CLI {
         }
 
         if ( $action === 'options' ) {
-            WP_CLI::line( 'TBC setting options for Copy addon' );
+            WP_CLI::line( 'TBC setting options for Directory Deployment addon' );
         }
     }
 }
