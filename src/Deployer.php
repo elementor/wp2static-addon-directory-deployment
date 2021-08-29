@@ -1,6 +1,6 @@
 <?php
 
-namespace WP2StaticCopy;
+namespace WP2StaticDirectoryDeployer;
 
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;

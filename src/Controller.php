@@ -1,16 +1,16 @@
 <?php
 
-namespace WP2StaticCopy;
+namespace WP2StaticDirectoryDeployer;
 
 class Controller {
     public function run() : void {
         add_filter(
             'wp2static_add_menu_items',
-            [ 'WP2StaticCopy\Controller', 'addSubmenuPage' ]
+            [ 'WP2StaticDirectoryDeployer\Controller', 'addSubmenuPage' ]
         );
 
         add_action(
-            'admin_post_wp2static_copy_save_options',
+            'admin_post_wp2static_directory_deployment_save_options',
             [ $this, 'saveOptionsFromUI' ],
             15,
             1
@@ -32,17 +32,17 @@ class Controller {
 
         do_action(
             'wp2static_register_addon',
-            'wp2static-addon-copy',
+            'wp2static-addon-directory-deployment',
             'deploy',
-            'Copy Deployment',
-            'https://github.com/twardoch/wp2static-addon-copy',
-            'Copies to folder with optional removal of previous content'
+            'Directory Deployment',
+            'https://github.com/twardoch/wp2static-addon-directory-deployment',
+            'Deploys to local directory, either overwriting or replacing existing files'
         );
 
         if ( defined( 'WP_CLI' ) ) {
             \WP_CLI::add_command(
-                'wp2static copy',
-                [ CLI::class, 'copy' ]
+                'wp2static directory-deployment',
+                [ CLI::class, 'directoryDeployment' ]
             );
         }
     }
@@ -56,7 +56,7 @@ class Controller {
         global $wpdb;
         $options = [];
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_directory_deployment_options';
 
         $rows = $wpdb->get_results( "SELECT * FROM $table_name" );
 
@@ -73,7 +73,7 @@ class Controller {
     public static function seedOptions() : void {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_directory_deployment_options';
 
         $query_string =
             "INSERT IGNORE INTO $table_name (name, value, label, description) " .
@@ -81,9 +81,9 @@ class Controller {
 
         $query = $wpdb->prepare(
             $query_string,
-            'copyRemoveTarget',
+            'directoryDeploymentDeleteBeforeDeployment',
             '1',
-            'Clean target folder before deployment',
+            'Delete target folder before deployment',
             ''
         );
 
@@ -91,9 +91,9 @@ class Controller {
 
         $query = $wpdb->prepare(
             $query_string,
-            'copyTargetFolder',
+            'directoryDeploymentTargetDirectory',
             '',
-            'Target folder (absolute)',
+            'Target directory (absolute path)',
             ''
         );
 
@@ -101,9 +101,9 @@ class Controller {
 
         $query = $wpdb->prepare(
             $query_string,
-            'copyExtraFolder',
+            'directoryDeploymentAdditionalSourceDirectory',
             '',
-            'Extra source folder (absolute)',
+            'Additional source directory to include in deployment (absolute path)',
             ''
         );
 
@@ -118,7 +118,7 @@ class Controller {
     public static function saveOption( string $name, $value ) : void {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_directory_deployment_options';
 
         $wpdb->update(
             $table_name,
@@ -127,40 +127,42 @@ class Controller {
         );
     }
 
-    public static function renderCopyPage() : void {
+    public static function renderDirectoryDeployerPage() : void {
         self::createOptionsTable();
         self::seedOptions();
 
         $view = [];
-        $view['nonce_action'] = 'wp2static-copy-options';
+        $view['nonce_action'] = 'wp2static-directory-deployment-options';
         $view['uploads_path'] = \WP2Static\SiteInfo::getPath( 'uploads' );
-        $copy_path = \WP2Static\SiteInfo::getPath( 'uploads' ) . 'wp2static-processed-site.copy';
+        $directory_deployment_target =
+            \WP2Static\SiteInfo::getPath( 'uploads' ) . 'wp2static-processed-site.copy';
 
+        // TODO: why do we need this here?
         $view['options'] = self::getOptions();
 
         $view['copy_url'] =
-            is_file( $copy_path ) ?
+            is_file( $directory_deployment_target ) ?
                 \WP2Static\SiteInfo::getUrl( 'uploads' ) . 'wp2static-processed-site.copy' : '#';
 
-        require_once __DIR__ . '/../views/copy-page.php';
+        require_once __DIR__ . '/../views/directory-deployment-page.php';
     }
 
 
     public function deploy( string $processed_site_path, string $enabled_deployer ) : void {
-        if ( $enabled_deployer !== 'wp2static-addon-copy' ) {
+        if ( $enabled_deployer !== 'wp2static-addon-directory-deployment' ) {
             return;
         }
 
-        \WP2Static\WsLog::l( 'Copy Addon deploying' );
+        \WP2Static\WsLog::l( 'Directory deployment Addon deploying' );
 
-        $copy_deployer = new Deployer();
-        $copy_deployer->uploadFiles( $processed_site_path );
+        $directory_deployer = new Deployer();
+        $directory_deployer->uploadFiles( $processed_site_path );
     }
 
     public static function createOptionsTable() : void {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_directory_deployment_options';
 
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -251,37 +253,37 @@ class Controller {
      * @return mixed[] array of submenu pages
      */
     public static function addSubmenuPage( array $submenu_pages ) : array {
-        $submenu_pages['copy'] = [ 'WP2StaticCopy\Controller', 'renderCopyPage' ];
+        $submenu_pages['directorydeployer'] = [ 'WP2StaticDirectoryDeployer\Controller', 'renderDirectoryDeployerPage' ];
 
         return $submenu_pages;
     }
 
     public static function saveOptionsFromUI() : void {
-        check_admin_referer( 'wp2static-copy-options' );
+        check_admin_referer( 'wp2static-directory-deployment-options' );
 
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_directory_deployment_options';
 
         $wpdb->update(
             $table_name,
-            [ 'value' => sanitize_text_field( $_POST['copyRemoveTarget'] ) ],
-            [ 'name' => 'copyRemoveTarget' ]
+            [ 'value' => sanitize_text_field( $_POST['directoryDeploymentDeleteBeforeDeployment'] ) ],
+            [ 'name' => 'directoryDeploymentDeleteBeforeDeployment' ]
         );
 
         $wpdb->update(
             $table_name,
-            [ 'value' => sanitize_text_field( $_POST['copyTargetFolder'] ) ],
-            [ 'name' => 'copyTargetFolder' ]
+            [ 'value' => sanitize_text_field( $_POST['directoryDeploymentTargetDirectory'] ) ],
+            [ 'name' => 'directoryDeploymentTargetDirectory' ]
         );
 
         $wpdb->update(
             $table_name,
-            [ 'value' => sanitize_text_field( $_POST['copyExtraFolder'] ) ],
-            [ 'name' => 'copyExtraFolder' ]
+            [ 'value' => sanitize_text_field( $_POST['directoryDeploymentAdditionalSourceDirectory'] ) ],
+            [ 'name' => 'directoryDeploymentAdditionalSourceDirectory' ]
         );
 
-        wp_safe_redirect( admin_url( 'admin.php?page=wp2static-addon-copy' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=wp2static-addon-directory-deployment' ) );
         exit;
     }
 
@@ -293,7 +295,7 @@ class Controller {
     public static function getValue( string $name ) : string {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'wp2static_addon_copy_options';
+        $table_name = $wpdb->prefix . 'wp2static_addon_directory_deployment_options';
 
         $sql = $wpdb->prepare(
             "SELECT value FROM $table_name WHERE" . ' name = %s LIMIT 1',
@@ -312,11 +314,11 @@ class Controller {
     public function addOptionsPage() : void {
         add_submenu_page(
             '',
-            'Copy Deployment Options',
-            'Copy Deployment Options',
+            'Directory Deployment Options',
+            'Directory Deployment Options',
             'manage_options',
-            'wp2static-addon-copy',
-            [ $this, 'renderCopyPage' ]
+            'wp2static-addon-directory-deployment',
+            [ $this, 'renderDirectoryDeployerPage' ]
         );
     }
 }

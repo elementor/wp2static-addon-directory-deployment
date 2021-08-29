@@ -1,14 +1,14 @@
 <?php
 
-namespace WP2StaticCopy;
+namespace WP2StaticDirectoryDeployer;
 
 use WP_CLI;
 
 
 /**
- * WP2StaticS3 WP-CLI commands
+ * WP2StaticDirectoryDeployment WP-CLI commands
  *
- * Registers WP-CLI commands for WP2StaticCopy under main wp2static cmd
+ * Registers WP-CLI commands for WP2Static Directory Deployment under main wp2static cmd
  *
  * Usage: wp wp2static options set copy folder
  */
@@ -20,7 +20,7 @@ class CLI {
      * @param string[] $args CLI args
      * @param string[] $assoc_args CLI args
      */
-    public static function copy(
+    public static function directoryDeployment(
         array $args,
         array $assoc_args
     ) : void {

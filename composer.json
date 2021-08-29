@@ -1,19 +1,27 @@
 {
-    "name": "twardoch/wp2static-addon-copy",
-    "description": "Copy to Folder Add-on for WP2Static.",
-    "homepage": "https://github.com/twardoch/wp2static-addon-copy",
+    "name": "leonstafford/wp2static-addon-directory-deployment",
+    "description": "Local directory deployment Add-on for WP2Static.",
+    "homepage": "https://github.com/twardoch/wp2static-addon-directory-deployment",
     "license": "UNLICENSE",
-    "authors": [{
+    "authors": [
+      {
+            "name": "Leon Stafford",
+            "email": "me@ljs.dev",
+            "homepage": "https://ljs.dev"
+      },
+      {
         "name": "Adam Twardoch",
         "email": "adam+github@twardoch.com",
         "homepage": "https://twardoch.github.io"
-    }],
+    
+      }
+    ],
     "type": "wordpress-plugin",
     "support": {
-        "issues": "https://github.com/twardoch/wp2static-addon-copy/issues",
+        "issues": "https://github.com/twardoch/wp2static-addon-directory-deployment/issues",
         "forum": "https://wp2static.com/community",
         "docs": "https://wp2static.com/documentation",
-        "source": "https://github.com/twardoch/wp2static-addon-copy"
+        "source": "https://github.com/twardoch/wp2static-addon-directory-deployment"
     },
     "repositories": [],
     "require": {
@@ -33,13 +41,13 @@
     },
     "autoload": {
         "psr-4": {
-            "WP2StaticCopy\\": "src/"
+            "WP2StaticDirectoryDeployer\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "PHPStan\\WordPress\\": "tests/phpstan/",
-            "WP2StaticCopy\\": "src/"
+            "WP2StaticDirectoryDeployer\\": "src/"
         }
     },
     "config": {
